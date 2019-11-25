@@ -43,13 +43,13 @@ void serve_file(int, const char*);
 int startup(u_short*);
 void unimplemented(int);
 
+
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
  * return.  Process the request appropriately.
  * Parameters: the socket connected to the client */
 /**********************************************************************/
-void accept_request(int client)
-{
+void accept_request(int client) {
 	char buf[1024];
 	int numchars;
 	char method[255];
@@ -57,8 +57,7 @@ void accept_request(int client)
 	char path[512];
 	size_t i, j;
 	struct stat st;
-	int cgi = 0;      /* becomes true if server decides this is a CGI
-                    * program */
+	int cgi = 0;  /* becomes true if server decides this is a CGI program */
 	char* query_string = NULL;
 	
 	numchars = get_line(client, buf, sizeof(buf));
@@ -135,10 +134,8 @@ void accept_request(int client)
 /* Inform the client that a request it has made has a problem.
  * Parameters: client socket */
 /**********************************************************************/
-void bad_request(int client)
-{
+void bad_request(int client) {
 	char buf[1024];
-	
 	sprintf(buf, "HTTP/1.0 400 BAD REQUEST\r\n");
 	send(client, buf, sizeof(buf), 0);
 	sprintf(buf, "Content-type: text/html\r\n");
@@ -158,10 +155,8 @@ void bad_request(int client)
  * Parameters: the client socket descriptor
  *             FILE pointer for the file to cat */
 /**********************************************************************/
-void cat(int client, FILE* resource)
-{
+void cat(int client, FILE* resource) {
 	char buf[1024];
-	
 	fgets(buf, sizeof(buf), resource);
 	while (!feof(resource)) {
 		send(client, buf, strlen(buf), 0);
@@ -173,10 +168,8 @@ void cat(int client, FILE* resource)
 /* Inform the client that a CGI script could not be executed.
  * Parameter: the client socket descriptor. */
 /**********************************************************************/
-void cannot_execute(int client)
-{
+void cannot_execute(int client) {
 	char buf[1024];
-	
 	sprintf(buf, "HTTP/1.0 500 Internal Server Error\r\n");
 	send(client, buf, strlen(buf), 0);
 	sprintf(buf, "Content-type: text/html\r\n");
@@ -192,8 +185,7 @@ void cannot_execute(int client)
  * on value of errno, which indicates system call errors) and exit the
  * program indicating an error. */
 /**********************************************************************/
-void error_die(const char* sc)
-{
+void error_die(const char* sc) {
 	perror(sc);
 	exit(1);
 }
@@ -204,9 +196,7 @@ void error_die(const char* sc)
  * Parameters: client socket descriptor
  *             path to the CGI script */
 /**********************************************************************/
-void execute_cgi(int client, const char* path,
-				 const char* method, const char* query_string)
-{
+void execute_cgi(int client, const char* path, const char* method, const char* query_string) {
 	char buf[1024];
 	int cgi_output[2];
 	int cgi_input[2];
@@ -219,11 +209,11 @@ void execute_cgi(int client, const char* path,
 	
 	buf[0] = 'A';
 	buf[1] = '\0';
-	if (strcasecmp(method, "GET") == 0)
+	if (strcasecmp(method, "GET") == 0) {
 		while ((numchars > 0) && strcmp("\n", buf)) { /* read & discard headers */
 			numchars = get_line(client, buf, sizeof(buf));
 		}
-	else {  /* POST */
+	} else {  /* POST */
 		numchars = get_line(client, buf, sizeof(buf));
 		while ((numchars > 0) && strcmp("\n", buf)) {
 			buf[15] = '\0';
@@ -249,11 +239,11 @@ void execute_cgi(int client, const char* path,
 		cannot_execute(client);
 		return;
 	}
-	
 	if ((pid = fork()) < 0) {
 		cannot_execute(client);
 		return;
 	}
+
 	if (pid == 0) { /* child: CGI script */
 		char meth_env[255];
 		char query_env[255];
@@ -305,8 +295,7 @@ void execute_cgi(int client, const char* path,
  *             the size of the buffer
  * Returns: the number of bytes stored (excluding null) */
 /**********************************************************************/
-int get_line(int sock, char* buf, int size)
-{
+int get_line(int sock, char* buf, int size) {
 	int i = 0;
 	char c = '\0';
 	int n;
@@ -340,11 +329,9 @@ int get_line(int sock, char* buf, int size)
 /* Parameters: the socket to print the headers on
  *             the name of the file */
 /**********************************************************************/
-void headers(int client, const char* filename)
-{
+void headers(int client, const char* filename) {
 	char buf[1024];
 	(void)filename;  /* could use filename to determine file type */
-	
 	strcpy(buf, "HTTP/1.0 200 OK\r\n");
 	send(client, buf, strlen(buf), 0);
 	strcpy(buf, SERVER_STRING);
@@ -358,10 +345,8 @@ void headers(int client, const char* filename)
 /**********************************************************************/
 /* Give a client a 404 not found status message. */
 /**********************************************************************/
-void not_found(int client)
-{
+void not_found(int client) {
 	char buf[1024];
-	
 	sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
 	send(client, buf, strlen(buf), 0);
 	sprintf(buf, SERVER_STRING);
@@ -389,8 +374,7 @@ void not_found(int client)
  *              file descriptor
  *             the name of the file to serve */
 /**********************************************************************/
-void serve_file(int client, const char* filename)
-{
+void serve_file(int client, const char* filename) {
 	FILE* resource = NULL;
 	int numchars = 1;
 	char buf[1024];
@@ -419,8 +403,7 @@ void serve_file(int client, const char* filename)
  * Parameters: pointer to variable containing the port to connect on
  * Returns: the socket */
 /**********************************************************************/
-int startup(u_short* port)
-{
+int startup(u_short* port) {
 	int httpd = 0;
 	struct sockaddr_in name;
 	
@@ -453,10 +436,8 @@ int startup(u_short* port)
  * implemented.
  * Parameter: the client socket */
 /**********************************************************************/
-void unimplemented(int client)
-{
+void unimplemented(int client) {
 	char buf[1024];
-	
 	sprintf(buf, "HTTP/1.0 501 Method Not Implemented\r\n");
 	send(client, buf, strlen(buf), 0);
 	sprintf(buf, SERVER_STRING);
@@ -477,8 +458,7 @@ void unimplemented(int client)
 
 /**********************************************************************/
 
-int main(void)
-{
+int main(void) {
 	int server_sock = -1;
 	u_short port = 9734;
 	int client_sock = -1;
@@ -503,6 +483,5 @@ int main(void)
 	}
 	
 	close(server_sock);
-	
 	return (0);
 }
